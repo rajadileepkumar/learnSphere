@@ -1,0 +1,94 @@
+.wrap {
+  max-width: 640px;
+  margin: 48px auto;
+  padding: 0 24px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.meta {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.form {
+  display: flex;
+  gap: 12px;
+}
+
+.input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  font-size: 14px;
+}
+
+.submitButton {
+  padding: 12px 24px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.invalid {
+  background: #fdecea;
+  color: #9c2b1a;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 1px solid #f2c1b8;
+  margin-bottom: 16px;
+}
+
+.certificate {
+  border: 2px solid var(--foreground);
+  padding: 48px 32px;
+  text-align: center;
+  background: var(--surface);
+}
+
+.badge {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1e6b30;
+  margin-bottom: 16px;
+}
+
+.studentName {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 8px 0;
+}
+
+.courseName {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 16px 0;
+}
+
+.certDetails {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 24px;
+}
+
+.back {
+  display: block;
+  margin-top: 24px;
+  text-align: center;
+}

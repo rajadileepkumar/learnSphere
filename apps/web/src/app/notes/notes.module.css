@@ -1,0 +1,62 @@
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+}
+
+.card {
+  display: block;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  color: inherit;
+}
+
+.card:first-child {
+  border-top: none;
+}
+
+.lessonTitle {
+  font-weight: 700;
+}
+
+.meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.preview {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}

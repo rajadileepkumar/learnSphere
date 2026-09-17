@@ -1,0 +1,116 @@
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.certificatesLink {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.logout {
+  padding: 10px 20px;
+  background: var(--foreground);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 16px;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.courseList {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+
+.courseRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.courseRow:first-child {
+  border-top: none;
+}
+
+.courseRow a {
+  font-weight: 700;
+}
+
+.courseMeta {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.activityItem {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.activityItem strong {
+  color: var(--foreground);
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 14px;
+}

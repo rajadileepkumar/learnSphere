@@ -1,0 +1,30 @@
+# Local dev only: WordPress + MySQL. Next.js/API/Neon run outside Docker (npm run dev, cloud Neon).
+# ponytail: no WPGraphQL/plugin provisioning automation here — install it once via wp-admin, revisit if this needs to be reproducible for a team.
+services:
+  wordpress:
+    image: wordpress:latest
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    depends_on:
+      - mysql
+    volumes:
+      - wp_data:/var/www/html
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  wp_data:
+  db_data:
