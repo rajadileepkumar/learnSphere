@@ -1,0 +1,38 @@
+# Runs after CI succeeds on main. The web app (Vercel) is git-linked and already
+# auto-deploys on push to main via Vercel's own GitHub App — this workflow only handles
+# the API (Railway isn't git-linked; it was deployed via the Railway CLI) and its migrations.
+# Needs RAILWAY_TOKEN and DATABASE_URL set as repo secrets (Settings -> Secrets and variables
+# -> Actions) to actually run; until then this job will fail at the first step that needs them.
+name: Deploy
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+jobs:
+  migrate:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run database migrations
+        run: npm run db:migrate --workspace=apps/api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  deploy-api:
+    needs: migrate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # apps/api is deployed standalone (its own tsconfig/deps, no monorepo root at runtime),
+      # so --path-as-root uploads just that directory as the build context.
+      - name: Deploy API to Railway
+        run: npx --yes @railway/cli up apps/api --path-as-root --service api --ci
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
