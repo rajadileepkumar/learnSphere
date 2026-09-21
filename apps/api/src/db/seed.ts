@@ -14,7 +14,7 @@ async function seed() {
     rows: [course],
   } = await pool.query<{ id: string }>(
     `INSERT INTO courses (wp_course_id, slug, title, status, duration_minutes, difficulty)
-     VALUES (1, 'intro-to-learnsphere', 'Intro to LearnSphere', 'published', 60, 'beginner')
+     VALUES (1, 'intro-to-learnsphere', 'Intro to LearnSphere', 'publish', 60, 'beginner')
      ON CONFLICT (wp_course_id) DO UPDATE SET title = EXCLUDED.title
      RETURNING id`,
   );
