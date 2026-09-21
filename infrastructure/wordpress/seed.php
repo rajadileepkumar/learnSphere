@@ -5,7 +5,7 @@ define('LS_SEEDING', true);
 $lessonContent = require __DIR__ . '/lesson-content.php';
 
 function ls_make($type, $title, $slug, $content, $meta) {
-  $id = wp_insert_post(['post_type' => $type, 'post_title' => $title, 'post_name' => $slug, 'post_content' => $content, 'post_status' => 'publish']);
+  $id = wp_insert_post(['post_type' => $type, 'post_title' => $title, 'post_name' => $slug, 'post_content' => wp_slash($content), 'post_status' => 'publish']);
   foreach ($meta as $k => $v) update_post_meta($id, $k, is_array($v) ? implode("\n", $v) : $v);
   return $id;
 }

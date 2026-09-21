@@ -36,4 +36,7 @@ $R = [
 $group = ["variables"=>"js","functions"=>"js","async"=>"js","select"=>"sql","joins"=>"sql","setting-up-python"=>"py","dataframes"=>"py","cleaning-data"=>"py","visualising-results"=>"py","what-is-ux"=>"ux","wireframing"=>"ux"];
 foreach ($L as $slug => &$row) { $row[3] = isset($group[$slug]) ? $R[$group[$slug]] : []; }
 unset($row);
+// Bodies are single-quoted PHP, so a code sample's line breaks are the two characters backslash+n; make them real newlines.
+foreach ($L as &$row) { $row[2] = str_replace('\n', "\n", $row[2]); }
+unset($row);
 return $L;
