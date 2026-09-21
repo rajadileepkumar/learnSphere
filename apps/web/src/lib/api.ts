@@ -101,6 +101,12 @@ export interface LessonDetail {
   courseId: string;
   courseSlug: string;
   quizId: string | null;
+  content: {
+    html: string | null;
+    videoEmbedUrl: string | null;
+    objectives: string[];
+    resources: { title: string; url: string }[];
+  } | null;
 }
 
 export interface LessonProgress {

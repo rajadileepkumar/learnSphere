@@ -2,6 +2,7 @@
 // Demo content. Course/lesson slugs for the first three courses intentionally match the rows the API
 // already has in Postgres, so a follow-up ID remap keeps existing enrollments, progress and quizzes.
 define('LS_SEEDING', true);
+$lessonContent = require __DIR__ . '/lesson-content.php';
 
 function ls_make($type, $title, $slug, $content, $meta) {
   $id = wp_insert_post(['post_type' => $type, 'post_title' => $title, 'post_name' => $slug, 'post_content' => $content, 'post_status' => 'publish']);
@@ -72,10 +73,11 @@ foreach ($courses as [$title, $slug, $inst, $dur, $diff, $cat, $featured, $short
     $mid = ls_make('module', $mtitle, $slug . '-module-' . ($mi + 1), '', ['course_id' => $cid, 'order' => $mi, 'description' => $mtitle]);
     $map[$slug]['modules'][] = $mid;
     foreach ($lessons as $li => [$ltitle, $lslug, $type, $ldur, $body, $lobj]) {
+      if (isset($lessonContent[$lslug])) { [$type, $videoUrl, $body, $resources] = $lessonContent[$lslug]; } else { $videoUrl = $type === 'video' ? $video : ''; $resources = []; }
       $lid = ls_make('lesson', $ltitle, $lslug, $body, [
         'module_id' => $mid, 'lesson_type' => $type, 'duration' => $ldur, 'order' => $li, 'required' => 1,
-        'video_url' => $type === 'video' ? $video : '', 'objectives' => $lobj,
-        'resources' => ['Course slides|https://example.com/slides.pdf'],
+        'video_url' => $videoUrl, 'objectives' => $lobj,
+        'resources' => $resources,
       ]);
       $map[$slug]['lessons'][$lslug] = $lid;
     }

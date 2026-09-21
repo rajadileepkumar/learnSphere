@@ -1,7 +1,11 @@
+import sanitizeHtml from 'sanitize-html';
 import type { Pool } from 'pg';
 import { assertEnrolled } from '../../lib/enrollment.js';
 import { AppError } from '../../lib/errors.js';
 import { ensureCertificate } from '../certificates/service.js';
+import { withCache } from '../wordpress/cache.js';
+import { fetchLessonContent } from '../wordpress/queries.js';
+import type { WPResource } from '../wordpress/types.js';
 import type { LessonNoteInput, LessonProgressInput } from './schemas.js';
 
 export interface LessonDetail {
@@ -16,6 +20,17 @@ export interface LessonDetail {
   courseId: string;
   courseSlug: string;
   quizId: string | null;
+}
+
+export interface LessonContent {
+  html: string | null;
+  videoEmbedUrl: string | null;
+  objectives: string[];
+  resources: WPResource[];
+}
+
+export interface LessonWithContent extends LessonDetail {
+  content: LessonContent | null;
 }
 
 export interface LessonProgressResult {
@@ -75,8 +90,32 @@ async function getLessonContext(pool: Pool, lessonId: string): Promise<LessonDet
   };
 }
 
-export async function getLesson(pool: Pool, lessonId: string): Promise<LessonDetail> {
-  return getLessonContext(pool, lessonId);
+// Only YouTube is embedded, built from the parsed video id, so editor-supplied URLs can't inject arbitrary frames.
+function toEmbedUrl(url: string | null): string | null {
+  const id = url?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/)?.[1];
+  return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+}
+
+// Lesson body lives in WordPress. A WordPress outage must not break the lesson page, so failures degrade to null.
+async function loadContent(wpLessonId: number | null): Promise<LessonContent | null> {
+  if (!wpLessonId) return null;
+  try {
+    const wp = await withCache(`course:lesson:${wpLessonId}`, 60_000, () => fetchLessonContent(wpLessonId));
+    if (!wp) return null;
+    return {
+      html: wp.html ? sanitizeHtml(wp.html) : null,
+      videoEmbedUrl: toEmbedUrl(wp.videoUrl),
+      objectives: wp.objectives,
+      resources: wp.resources.filter((r) => /^https?:\/\//.test(r.url)),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function getLesson(pool: Pool, lessonId: string): Promise<LessonWithContent> {
+  const lesson = await getLessonContext(pool, lessonId);
+  return { ...lesson, content: await loadContent(lesson.wpLessonId) };
 }
 
 export async function upsertLessonProgress(

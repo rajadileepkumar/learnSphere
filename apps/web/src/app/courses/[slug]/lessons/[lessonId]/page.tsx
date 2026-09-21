@@ -130,7 +130,7 @@ export default function LessonPlayerPage() {
 
       {error && <p className={styles.error}>{error}</p>}
 
-      <div className={styles.content}>Lesson content is managed in WordPress and renders here once connected.</div>
+      <LessonBody content={lesson.content} title={lesson.title} />
 
       <button className={styles.aiTutorLink} onClick={onAskAiTutor} disabled={startingChat}>
         {startingChat ? 'Starting...' : '💬 Ask the AI Tutor about this lesson'}
@@ -182,5 +182,50 @@ export default function LessonPlayerPage() {
         </button>
       </div>
     </main>
+  );
+}
+
+function LessonBody({ content, title }: { content: LessonDetail['content']; title: string }) {
+  if (!content || (!content.html && !content.videoEmbedUrl && content.objectives.length === 0)) {
+    return <div className={`${styles.content} ${styles.empty}`}>Content for this lesson is not available right now.</div>;
+  }
+  return (
+    <div className={styles.content}>
+      {content.videoEmbedUrl && (
+        <iframe
+          className={styles.video}
+          src={content.videoEmbedUrl}
+          title={title}
+          allow="accelerometer; encrypted-media; picture-in-picture"
+          allowFullScreen
+        />
+      )}
+      {/* Sanitized server-side (sanitize-html) before it leaves the API. */}
+      {content.html && <div dangerouslySetInnerHTML={{ __html: content.html }} />}
+      {content.objectives.length > 0 && (
+        <>
+          <h3 className={styles.subhead}>What you will learn</h3>
+          <ul className={styles.objectives}>
+            {content.objectives.map((o) => (
+              <li key={o}>{o}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {content.resources.length > 0 && (
+        <>
+          <h3 className={styles.subhead}>Resources</h3>
+          <ul className={styles.resources}>
+            {content.resources.map((r) => (
+              <li key={r.url}>
+                <a href={r.url} target="_blank" rel="noopener noreferrer">
+                  {r.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
   );
 }

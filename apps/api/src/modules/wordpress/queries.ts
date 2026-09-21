@@ -267,3 +267,22 @@ export async function fetchInstructorBySlug(slug: string): Promise<WPInstructor 
     socialLinks: raw.instructorFields?.socialLinks ?? [],
   };
 }
+
+export interface WPLessonContent {
+  html: string | null;
+  videoUrl: string | null;
+  objectives: string[];
+  resources: WPResource[];
+}
+
+export async function fetchLessonContent(lessonWpId: number): Promise<WPLessonContent | null> {
+  const data = await wpFetch<{ lesson: { lessonFields?: RawLesson['lessonFields'] } | null }>(
+    `query GetLessonContent($id: ID!) {
+      lesson(id: $id, idType: DATABASE_ID) { lessonFields { content videoUrl objectives resources { title url } } }
+    }`,
+    { id: String(lessonWpId) },
+  );
+  const f = data.lesson?.lessonFields;
+  if (!f) return null;
+  return { html: f.content ?? null, videoUrl: f.videoUrl || null, objectives: f.objectives ?? [], resources: f.resources ?? [] };
+}
