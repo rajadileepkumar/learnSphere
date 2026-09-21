@@ -3,10 +3,12 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { pool } from './client.js';
 
-const migrationsDir = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../../../infrastructure/migrations',
-);
+// Default assumes the monorepo layout (apps/api/src/db -> repo root -> infrastructure/migrations).
+// Overridable because a standalone deploy of just apps/api (e.g. Railway, scoped to this
+// package alone) doesn't have the sibling infrastructure/ directory at that fixed depth.
+const migrationsDir =
+  process.env.MIGRATIONS_DIR ??
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../infrastructure/migrations');
 
 async function migrate() {
   const client = await pool.connect();
