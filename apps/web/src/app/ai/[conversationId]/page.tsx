@@ -9,6 +9,7 @@ import {
   type AIConversationDetail,
   type AIMessage,
 } from '../../../lib/api';
+import { renderMarkdown } from '../../../lib/markdown';
 import { ensureAccessToken } from '../../../lib/session';
 import styles from '../ai.module.css';
 
@@ -125,7 +126,13 @@ function MessageBubble({
   const isAssistant = message.role === 'assistant';
   return (
     <div className={isAssistant ? styles.assistantBubble : styles.userBubble}>
-      <div className={styles.bubbleContent}>{message.content}</div>
+      {isAssistant ? (
+        // The tutor's reply is markdown; render it as HTML instead of showing raw ###/** syntax.
+        // renderMarkdown runs it through DOMPurify since this is model output, not our own content.
+        <div className={`${styles.bubbleContent} ${styles.markdown}`} dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }} />
+      ) : (
+        <div className={styles.bubbleContent}>{message.content}</div>
+      )}
       {message.sources.length > 0 && <div className={styles.sources}>Sources: {message.sources.map((s) => s.title).join(', ')}</div>}
       {isAssistant && (
         <div className={styles.feedbackRow}>
