@@ -15,6 +15,10 @@ const LINKS = [
   ['/bookmarks', 'Bookmarks'],
 ] as const;
 
+// Certificates are earned by taking courses, so the link only makes sense for roles that do —
+// platform admins manage the catalog from /admin instead of completing lessons themselves.
+const CERTIFICATE_ROLES = ['STUDENT', 'INSTRUCTOR'];
+
 export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -37,7 +41,11 @@ export default function NavBar() {
     router.push('/login');
   }
 
-  const links = user?.role === 'PLATFORM_ADMIN' ? [...LINKS, ['/admin', 'Admin'] as const] : LINKS;
+  const links = [
+    ...LINKS,
+    ...(user && CERTIFICATE_ROLES.includes(user.role) ? [['/certificates', 'Certificates'] as const] : []),
+    ...(user?.role === 'PLATFORM_ADMIN' ? [['/admin', 'Admin'] as const] : []),
+  ];
 
   return (
     <nav className={styles.nav}>

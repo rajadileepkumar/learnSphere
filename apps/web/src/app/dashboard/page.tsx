@@ -54,12 +54,7 @@ export default function DashboardPage() {
 
   return (
     <main className={styles.wrap}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Welcome, {user.displayName}</h1>
-        <Link href="/certificates" className={styles.certificatesLink}>
-          My Certificates
-        </Link>
-      </div>
+      <h1 className={styles.title}>Welcome, {user.displayName}</h1>
 
       <div className={styles.stats}>
         <div className={styles.stat}>

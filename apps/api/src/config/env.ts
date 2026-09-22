@@ -11,6 +11,8 @@ const schema = z.object({
   WORDPRESS_WEBHOOK_SECRET: z.string().default('dev-webhook-secret-change-me'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   AI_API_KEY: z.string().optional(),
+  GROQ_API_KEY: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);
