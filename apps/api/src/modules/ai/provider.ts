@@ -47,8 +47,8 @@ const postWithRetry = (url: string, headers: Record<string, string>, body: unkno
 // ponytail: cheapest current model per provider for a Q&A tutor bot; swap via a real config
 // knob if a heavier model is ever needed for specific courses.
 const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GROQ_MODEL = 'openai/gpt-oss-120b';
+const GEMINI_MODEL = 'gemini-3.6-flash';
 
 class AnthropicProvider implements AIProvider {
   async generate(system: string, messages: AIMessage[]): Promise<AIGenerateResult> {
@@ -94,6 +94,8 @@ class GeminiProvider implements AIProvider {
       {
         systemInstruction: { parts: [{ text: system }] },
         contents: messages.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+        // Gemini 3.6 Flash thinks by default; a Q&A tutor answer doesn't need that latency/token cost.
+        generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
       },
     );
     const body = (await res.json()) as {
@@ -119,10 +121,32 @@ class MockAIProvider implements AIProvider {
   }
 }
 
-// Groq and Gemini both have a genuinely free tier, so they're tried before the paid Anthropic key.
+// Tries each configured provider in order, falling through to the next on failure (rate limit,
+// outage, bad key, ...) instead of failing the request outright. Only throws once every
+// configured provider has failed.
+class FallbackProvider implements AIProvider {
+  constructor(private readonly providers: AIProvider[]) {}
+
+  async generate(system: string, messages: AIMessage[]): Promise<AIGenerateResult> {
+    let lastError: unknown;
+    for (const provider of this.providers) {
+      try {
+        return await provider.generate(system, messages);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError;
+  }
+}
+
+// Groq and Gemini both have a genuinely free tier, so they're tried before the paid Anthropic
+// key, and before each other in the order configured — with a fallback to whichever is next.
 export function getAIProvider(): AIProvider {
-  if (env.GROQ_API_KEY) return new GroqProvider();
-  if (env.GEMINI_API_KEY) return new GeminiProvider();
-  if (env.AI_API_KEY) return new AnthropicProvider();
-  return new MockAIProvider();
+  const providers: AIProvider[] = [];
+  if (env.GROQ_API_KEY) providers.push(new GroqProvider());
+  if (env.GEMINI_API_KEY) providers.push(new GeminiProvider());
+  if (env.AI_API_KEY) providers.push(new AnthropicProvider());
+  if (providers.length === 0) return new MockAIProvider();
+  return providers.length === 1 ? providers[0] : new FallbackProvider(providers);
 }
