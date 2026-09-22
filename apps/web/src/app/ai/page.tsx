@@ -1,62 +1,53 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { createAiConversation, listAiConversations, type AIConversationSummary } from '../../lib/api';
+import { useState, type FormEvent } from 'react';
+import { createAiConversation, postAiMessage } from '../../lib/api';
 import { ensureAccessToken } from '../../lib/session';
 import styles from './ai.module.css';
 
 export default function AiConversationsPage() {
   const router = useRouter();
-  const [conversations, setConversations] = useState<AIConversationSummary[] | null>(null);
-  const [starting, setStarting] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    ensureAccessToken()
-      .then((token) => listAiConversations(token))
-      .then(({ data }) => setConversations(data))
-      .catch(() => router.replace('/login'));
-  }, [router]);
-
-  async function onNewConversation() {
-    setStarting(true);
+  async function onSend(e: FormEvent) {
+    e.preventDefault();
+    if (!draft.trim()) return;
+    setSending(true);
+    setError(null);
     try {
       const token = await ensureAccessToken();
-      const { data } = await createAiConversation(token);
-      router.push(`/ai/${data.id}`);
-    } catch {
-      router.replace('/login');
-    } finally {
-      setStarting(false);
+      const { data: conversation } = await createAiConversation(token);
+      await postAiMessage(conversation.id, token, draft);
+      router.push(`/ai/${conversation.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start a conversation');
+      setSending(false);
     }
   }
 
   return (
-    <main className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>AI Tutor</h1>
-        <button className={styles.newButton} onClick={onNewConversation} disabled={starting}>
-          {starting ? 'Starting...' : 'New conversation'}
-        </button>
+    <div className={styles.blankScreen}>
+      <div className={styles.blankInner}>
+        <h1 className={styles.blankTitle}>AI Tutor</h1>
+        <p className={styles.blankSubtitle}>Ask anything about a course, a lesson, or your progress.</p>
+        {error && <p className={styles.error}>{error}</p>}
+        <form className={styles.composer} onSubmit={onSend}>
+          <textarea
+            className={styles.composerInput}
+            placeholder="Ask the AI Tutor a question..."
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            disabled={sending}
+            autoFocus
+          />
+          <button className={styles.sendButton} type="submit" disabled={sending || !draft.trim()}>
+            {sending ? 'Starting...' : 'Send'}
+          </button>
+        </form>
       </div>
-
-      {conversations === null && <p className={styles.empty}>Loading...</p>}
-      {conversations !== null && conversations.length === 0 && (
-        <p className={styles.empty}>No conversations yet. Start one, or ask a question from a lesson page.</p>
-      )}
-      {conversations !== null && conversations.length > 0 && (
-        <div className={styles.list}>
-          {conversations.map((c) => (
-            <Link key={c.id} href={`/ai/${c.id}`} className={styles.card}>
-              <div className={styles.cardTitle}>{c.title ?? 'New conversation'}</div>
-              <div className={styles.cardMeta}>
-                {c.courseTitle ?? 'General'} · {new Date(c.updatedAt).toLocaleString()}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-    </main>
+    </div>
   );
 }

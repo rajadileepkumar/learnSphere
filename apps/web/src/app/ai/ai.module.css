@@ -1,39 +1,103 @@
-.page {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 48px 24px;
-}
-
-.header {
+/* Claude-style shell: history sidebar (only rendered when history exists) + a main column
+   whose thread scrolls and whose composer stays pinned to the bottom. */
+.shell {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 24px;
+  height: calc(100dvh - 57px); /* 57px matches NavBar's rendered height */
+  min-height: 0;
 }
 
-.title {
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  overflow-y: auto;
+}
+
+.newChatButton {
+  display: block;
+  text-align: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.newChatButton:hover {
+  background: var(--input-bg);
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.historyItem,
+.historyItemActive {
+  display: block;
+  padding: 10px 10px;
+  border-radius: 6px;
+  color: inherit;
+}
+
+.historyItem:hover {
+  background: var(--input-bg);
+}
+
+.historyItemActive {
+  background: var(--input-bg);
+  font-weight: 700;
+}
+
+.historyTitle {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyMeta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Blank / new-conversation screen: centered greeting with the composer directly beneath it. */
+.blankScreen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.blankInner {
+  width: 100%;
+  max-width: 640px;
+}
+
+.blankTitle {
   font-size: 28px;
   font-weight: 800;
+  text-align: center;
 }
 
-.newButton {
-  padding: 10px 20px;
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.newButton:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.empty {
+.blankSubtitle {
   color: var(--muted);
+  text-align: center;
+  margin: 8px 0 24px;
 }
 
 .error {
@@ -42,27 +106,26 @@
   padding: 10px 12px;
   font-size: 13px;
   border: 1px solid #f2c1b8;
+  margin: 0 24px;
 }
 
-.list {
+/* Conversation thread: header, then a scrolling answer area, then a composer pinned to the bottom. */
+.threadLoading {
+  flex: 1;
   display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border);
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
 }
 
-.card {
-  display: block;
-  padding: 16px;
-  border-top: 1px solid var(--border);
-  color: inherit;
+.threadHeader {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
 }
 
-.card:first-child {
-  border-top: none;
-}
-
-.cardTitle {
-  font-weight: 700;
+.threadTitle {
+  font-size: 18px;
+  font-weight: 800;
 }
 
 .cardMeta {
@@ -71,17 +134,33 @@
   margin-top: 4px;
 }
 
-.back {
-  display: inline-block;
-  margin-bottom: 16px;
-  font-weight: 600;
+.threadArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
 }
 
 .thread {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 24px 0;
+  gap: 20px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.questionRow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.questionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
 }
 
 .userBubble,
@@ -92,13 +171,13 @@
 }
 
 .userBubble {
-  align-self: flex-end;
   background: var(--foreground);
   color: #fff;
 }
 
 .assistantBubble {
   align-self: flex-start;
+  max-width: 100%;
   background: var(--surface);
 }
 
@@ -131,6 +210,16 @@
 .feedbackActive {
   border-color: var(--primary);
   background: var(--input-bg);
+}
+
+/* Bottom composer bar: sticky within the conversation view, centered form within the blank view. */
+.composerBar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .composer {

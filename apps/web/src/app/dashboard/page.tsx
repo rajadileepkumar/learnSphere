@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
-  logout as apiLogout,
   getDashboardActivity,
   getDashboardMyCourses,
   getDashboardSummary,
@@ -14,7 +13,7 @@ import {
   type DashboardCourse,
   type DashboardSummary,
 } from '../../lib/api';
-import { clearAccessToken, ensureAccessToken } from '../../lib/session';
+import { ensureAccessToken } from '../../lib/session';
 import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
@@ -45,12 +44,6 @@ export default function DashboardPage() {
     void load();
   }, [router]);
 
-  async function onLogout() {
-    await apiLogout().catch(() => {});
-    clearAccessToken();
-    router.replace('/login');
-  }
-
   if (!user || !summary) {
     return (
       <main className={styles.wrap}>
@@ -63,23 +56,9 @@ export default function DashboardPage() {
     <main className={styles.wrap}>
       <div className={styles.header}>
         <h1 className={styles.title}>Welcome, {user.displayName}</h1>
-        <div className={styles.headerActions}>
-          <Link href="/ai" className={styles.certificatesLink}>
-            AI Tutor
-          </Link>
-          <Link href="/bookmarks" className={styles.certificatesLink}>
-            Bookmarks
-          </Link>
-          <Link href="/notes" className={styles.certificatesLink}>
-            Notes
-          </Link>
-          <Link href="/certificates" className={styles.certificatesLink}>
-            My Certificates
-          </Link>
-          <button className={styles.logout} onClick={onLogout}>
-            Log out
-          </button>
-        </div>
+        <Link href="/certificates" className={styles.certificatesLink}>
+          My Certificates
+        </Link>
       </div>
 
       <div className={styles.stats}>

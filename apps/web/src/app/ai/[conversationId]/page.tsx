@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   getAiConversation,
   postAiMessage,
@@ -21,6 +20,7 @@ export default function AiConversationPage() {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const threadEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     ensureAccessToken()
@@ -31,6 +31,10 @@ export default function AiConversationPage() {
       })
       .catch(() => router.replace('/login'));
   }, [conversationId, router]);
+
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ block: 'end' });
+  }, [conversation?.messages.length]);
 
   async function onSend(e: FormEvent) {
     e.preventDefault();
@@ -65,33 +69,40 @@ export default function AiConversationPage() {
   }
 
   if (!conversation) {
-    return (
-      <main className={styles.page}>
-        {error ? <p className={styles.error}>{error}</p> : <p className={styles.empty}>Loading...</p>}
-      </main>
-    );
+    return <div className={styles.threadLoading}>{error ? <p className={styles.error}>{error}</p> : 'Loading...'}</div>;
   }
 
   return (
-    <main className={styles.page}>
-      <Link className={styles.back} href="/ai">
-        ← All conversations
-      </Link>
-      <h1 className={styles.title}>{conversation.title ?? 'New conversation'}</h1>
-      <p className={styles.cardMeta}>{conversation.courseTitle ?? 'General'}</p>
+    <>
+      <div className={styles.threadHeader}>
+        <h1 className={styles.threadTitle}>{conversation.title ?? 'New conversation'}</h1>
+        <p className={styles.cardMeta}>{conversation.courseTitle ?? 'General'}</p>
+      </div>
 
-      <div className={styles.thread}>
-        {conversation.messages.map((message) => (
-          <MessageBubble key={message.id} message={message} onFeedback={onFeedback} />
-        ))}
+      <div className={styles.threadArea}>
+        <div className={styles.thread}>
+          {conversation.messages.map((message) =>
+            message.role === 'assistant' ? (
+              <MessageBubble key={message.id} message={message} onFeedback={onFeedback} />
+            ) : (
+              // The question sits directly above its answer, so it's always clear what a given
+              // answer is responding to — mirrors how Claude shows the prompt above its reply.
+              <div key={message.id} className={styles.questionRow}>
+                <div className={styles.questionLabel}>Asked</div>
+                <MessageBubble message={message} onFeedback={onFeedback} />
+              </div>
+            ),
+          )}
+          <div ref={threadEndRef} />
+        </div>
       </div>
 
       {error && <p className={styles.error}>{error}</p>}
 
-      <form className={styles.composer} onSubmit={onSend}>
+      <form className={styles.composerBar} onSubmit={onSend}>
         <textarea
           className={styles.composerInput}
-          placeholder="Ask the AI Tutor a question..."
+          placeholder="Ask a follow-up..."
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           disabled={sending}
@@ -100,20 +111,22 @@ export default function AiConversationPage() {
           {sending ? 'Sending...' : 'Send'}
         </button>
       </form>
-    </main>
+    </>
   );
 }
 
-function MessageBubble({ message, onFeedback }: { message: AIMessage; onFeedback: (id: string, rating: 'up' | 'down') => void }) {
+function MessageBubble({
+  message,
+  onFeedback,
+}: {
+  message: AIMessage;
+  onFeedback: (id: string, rating: 'up' | 'down') => void;
+}) {
   const isAssistant = message.role === 'assistant';
   return (
     <div className={isAssistant ? styles.assistantBubble : styles.userBubble}>
       <div className={styles.bubbleContent}>{message.content}</div>
-      {message.sources.length > 0 && (
-        <div className={styles.sources}>
-          Sources: {message.sources.map((s) => s.title).join(', ')}
-        </div>
-      )}
+      {message.sources.length > 0 && <div className={styles.sources}>Sources: {message.sources.map((s) => s.title).join(', ')}</div>}
       {isAssistant && (
         <div className={styles.feedbackRow}>
           <button
