@@ -67,6 +67,17 @@ export interface CourseSummary {
   durationMinutes: number | null;
   difficulty: string | null;
   publishedAt: string | null;
+  category: string | null;
+  shortDescription: string | null;
+  instructorName: string | null;
+  featured: boolean;
+}
+
+export interface CourseListItem extends CourseSummary {
+  enrollmentCount: number;
+  lessonCount: number;
+  averageRating: number | null;
+  reviewCount: number;
 }
 
 export interface CourseLesson {
@@ -160,12 +171,13 @@ function authHeaders(accessToken: string) {
   return { Authorization: `Bearer ${accessToken}` };
 }
 
-export function listCourses(params: { page?: number; sort?: 'newest' | 'popular' } = {}) {
+export function listCourses(params: { page?: number; pageSize?: number; sort?: 'newest' | 'popular' } = {}) {
   const query = new URLSearchParams();
   if (params.page) query.set('page', String(params.page));
+  if (params.pageSize) query.set('pageSize', String(params.pageSize));
   if (params.sort) query.set('sort', params.sort);
   const qs = query.toString();
-  return request<{ data: CourseSummary[]; meta: { page: number; pageSize: number; total: number } }>(
+  return request<{ data: CourseListItem[]; meta: { page: number; pageSize: number; total: number } }>(
     `/api/v1/courses${qs ? `?${qs}` : ''}`,
   );
 }

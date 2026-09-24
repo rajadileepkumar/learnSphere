@@ -19,8 +19,10 @@ describe('student learning routes', () => {
     const {
       rows: [course],
     } = await pool.query<{ id: string }>(
-      `INSERT INTO courses (wp_course_id, slug, title, status, thumbnail_url, duration_minutes, difficulty, published_at)
-       VALUES (1, 'intro-course', 'Intro Course', 'publish', 'https://example.test/thumb.jpg', 60, 'beginner', now())
+      `INSERT INTO courses (wp_course_id, slug, title, status, thumbnail_url, duration_minutes, difficulty, published_at,
+                           category, short_description, instructor_name, featured)
+       VALUES (1, 'intro-course', 'Intro Course', 'publish', 'https://example.test/thumb.jpg', 60, 'beginner', now(),
+               'Programming', 'Learn the basics.', 'Sarah Chen', true)
        RETURNING id`,
     );
     const {
@@ -88,6 +90,35 @@ describe('student learning routes', () => {
     expect(body.data).toContainEqual(
       expect.objectContaining({ slug: 'intro-course', title: 'Intro Course', difficulty: 'beginner' }),
     );
+  });
+
+  it('includes catalog fields and per-course stats, counting only approved reviews', async () => {
+    const {
+      rows: [user],
+    } = await pool.query<{ id: string }>(`SELECT id FROM users WHERE email = 'student@test.com'`);
+    const {
+      rows: [course],
+    } = await pool.query<{ id: string }>(`SELECT id FROM courses WHERE slug = 'intro-course'`);
+    await pool.query(
+      `INSERT INTO reviews (user_id, course_id, rating, status) VALUES ($1, $2, 4, 'approved'), ($1, $2, 1, 'pending')`,
+      [user.id, course.id],
+    );
+
+    const res = await app.inject({ method: 'GET', url: '/api/v1/courses' });
+    const intro = res.json().data.find((c: { slug: string }) => c.slug === 'intro-course');
+    expect(intro).toMatchObject({
+      category: 'Programming',
+      shortDescription: 'Learn the basics.',
+      instructorName: 'Sarah Chen',
+      featured: true,
+      lessonCount: 2,
+      averageRating: 4,
+      reviewCount: 1,
+    });
+    const other = res.json().data.find((c: { slug: string }) => c.slug === 'other-course');
+    expect(other).toMatchObject({ category: null, featured: false, lessonCount: 1, averageRating: null, reviewCount: 0 });
+
+    await pool.query(`DELETE FROM reviews WHERE course_id = $1`, [course.id]);
   });
 
   it('returns course detail with nested curriculum', async () => {

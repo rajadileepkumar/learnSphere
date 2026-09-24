@@ -84,8 +84,17 @@ describe('wordpress webhook route', () => {
     expect(res.json().data.status).toBe('processed');
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
-    const { rows } = await pool.query('SELECT title, status FROM courses WHERE wp_course_id = $1', [501]);
-    expect(rows[0]).toMatchObject({ title: 'Intro Course', status: 'publish' });
+    const { rows } = await pool.query(
+      'SELECT title, status, category, short_description, featured FROM courses WHERE wp_course_id = $1',
+      [501],
+    );
+    expect(rows[0]).toMatchObject({
+      title: 'Intro Course',
+      status: 'publish',
+      category: 'general',
+      short_description: 'short',
+      featured: false,
+    });
   });
 
   it('does not reprocess a duplicate delivery id', async () => {

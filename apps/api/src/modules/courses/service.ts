@@ -10,6 +10,18 @@ export interface CourseSummary {
   durationMinutes: number | null;
   difficulty: string | null;
   publishedAt: string | null;
+  category: string | null;
+  shortDescription: string | null;
+  instructorName: string | null;
+  featured: boolean;
+}
+
+// Catalog-only stats; kept off CourseSummary so the detail endpoint doesn't need the aggregates.
+export interface CourseListItem extends CourseSummary {
+  enrollmentCount: number;
+  lessonCount: number;
+  averageRating: number | null;
+  reviewCount: number;
 }
 
 export interface CourseLesson {
@@ -36,17 +48,30 @@ export interface CourseDetail extends CourseSummary {
 export async function listCourses(
   pool: Pool,
   { page, pageSize, sort }: ListCoursesQuery,
-): Promise<{ items: CourseSummary[]; total: number }> {
-  const orderBy = sort === 'popular' ? 'enrollment_count DESC, c.published_at DESC NULLS LAST' : 'c.published_at DESC NULLS LAST';
+): Promise<{ items: CourseListItem[]; total: number }> {
+  const orderBy =
+    sort === 'popular'
+      ? 'enrollment_count DESC, c.published_at DESC NULLS LAST'
+      : 'c.published_at DESC NULLS LAST';
   const offset = (page - 1) * pageSize;
 
+  // Each aggregate is pre-grouped in its own derived table: joining enrollments, lessons and
+  // reviews directly onto courses would multiply the rows and inflate every count.
   const { rows } = await pool.query(
     `SELECT c.id, c.slug, c.title, c.thumbnail_url, c.duration_minutes, c.difficulty, c.published_at,
-            COUNT(e.id)::int AS enrollment_count
+            c.category, c.short_description, c.instructor_name, c.featured,
+            COALESCE(e.cnt, 0) AS enrollment_count,
+            COALESCE(l.cnt, 0) AS lesson_count,
+            r.avg_rating,
+            COALESCE(r.cnt, 0) AS review_count
      FROM courses c
-     LEFT JOIN enrollments e ON e.course_id = c.id
+     LEFT JOIN (SELECT course_id, COUNT(*)::int AS cnt FROM enrollments GROUP BY course_id) e ON e.course_id = c.id
+     LEFT JOIN (SELECT m.course_id, COUNT(ls.id)::int AS cnt
+                FROM course_modules m JOIN lessons ls ON ls.module_id = m.id
+                GROUP BY m.course_id) l ON l.course_id = c.id
+     LEFT JOIN (SELECT course_id, AVG(rating) AS avg_rating, COUNT(*)::int AS cnt
+                FROM reviews WHERE status = 'approved' GROUP BY course_id) r ON r.course_id = c.id
      WHERE c.status = 'publish'
-     GROUP BY c.id, c.slug, c.title, c.thumbnail_url, c.duration_minutes, c.difficulty, c.published_at
      ORDER BY ${orderBy}
      LIMIT $1 OFFSET $2`,
     [pageSize, offset],
@@ -56,14 +81,21 @@ export async function listCourses(
   } = await pool.query<{ count: string }>(`SELECT count(*) FROM courses WHERE status = 'publish'`);
 
   return {
-    items: rows.map(toCourseSummary),
+    items: rows.map((row) => ({
+      ...toCourseSummary(row),
+      enrollmentCount: Number(row.enrollment_count),
+      lessonCount: Number(row.lesson_count),
+      averageRating: row.avg_rating === null ? null : Math.round(Number(row.avg_rating) * 10) / 10,
+      reviewCount: Number(row.review_count),
+    })),
     total: Number(count),
   };
 }
 
 export async function getCourseBySlug(pool: Pool, slug: string): Promise<CourseDetail | null> {
   const { rows } = await pool.query(
-    `SELECT id, slug, title, thumbnail_url, duration_minutes, difficulty, published_at
+    `SELECT id, slug, title, thumbnail_url, duration_minutes, difficulty, published_at,
+            category, short_description, instructor_name, featured
      FROM courses WHERE slug = $1 AND status = 'publish'`,
     [slug],
   );
@@ -205,6 +237,10 @@ function toCourseSummary(row: {
   duration_minutes: number | null;
   difficulty: string | null;
   published_at: string | null;
+  category: string | null;
+  short_description: string | null;
+  instructor_name: string | null;
+  featured: boolean;
 }): CourseSummary {
   return {
     id: row.id,
@@ -214,5 +250,9 @@ function toCourseSummary(row: {
     durationMinutes: row.duration_minutes,
     difficulty: row.difficulty,
     publishedAt: row.published_at,
+    category: row.category,
+    shortDescription: row.short_description,
+    instructorName: row.instructor_name,
+    featured: row.featured,
   };
 }
