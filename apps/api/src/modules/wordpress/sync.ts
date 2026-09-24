@@ -28,8 +28,9 @@ async function upsertCourse(pool: Pool, course: WPCourse): Promise<string> {
   const {
     rows: [row],
   } = await pool.query<{ id: string }>(
-    `INSERT INTO courses (wp_course_id, slug, title, status, thumbnail_url, duration_minutes, difficulty, published_at, synced_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+    `INSERT INTO courses (wp_course_id, slug, title, status, thumbnail_url, duration_minutes, difficulty, published_at,
+                          category, short_description, instructor_name, featured, synced_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())
      ON CONFLICT (wp_course_id) DO UPDATE SET
        slug = EXCLUDED.slug,
        title = EXCLUDED.title,
@@ -38,6 +39,10 @@ async function upsertCourse(pool: Pool, course: WPCourse): Promise<string> {
        duration_minutes = EXCLUDED.duration_minutes,
        difficulty = EXCLUDED.difficulty,
        published_at = EXCLUDED.published_at,
+       category = EXCLUDED.category,
+       short_description = EXCLUDED.short_description,
+       instructor_name = EXCLUDED.instructor_name,
+       featured = EXCLUDED.featured,
        synced_at = now()
      RETURNING id`,
     [
@@ -49,6 +54,10 @@ async function upsertCourse(pool: Pool, course: WPCourse): Promise<string> {
       course.durationMinutes,
       course.difficulty,
       course.publishedAt,
+      course.category,
+      course.shortDescription,
+      course.instructor?.name ?? null,
+      course.featured,
     ],
   );
   return row.id;
