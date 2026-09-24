@@ -11,6 +11,7 @@ import {
   filterAndSort,
   formatDuration,
   LEVELS,
+  normalizeCourse,
   type CatalogFilters,
   type SortKey,
 } from '../../lib/catalog';
@@ -63,7 +64,7 @@ export default function CourseCatalogPage() {
 
   useEffect(() => {
     listCourses({ pageSize: 50 })
-      .then(({ data }) => setCourses(data))
+      .then(({ data }) => setCourses(data.map(normalizeCourse)))
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load courses'));
   }, []);
 

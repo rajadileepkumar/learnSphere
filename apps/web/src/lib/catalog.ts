@@ -36,6 +36,27 @@ export function formatDuration(minutes: number | null): string | null {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+// The web app can deploy ahead of the API (Vercel ships on merge; the API deploys separately),
+// so an older API may omit the catalog fields. Default them once here so the cards, filters and
+// sorters never see undefined — undefined.toFixed() crashed the page, and undefined counts NaN-sort.
+export function normalizeCourse(c: Partial<CourseListItem> & Pick<CourseListItem, 'id' | 'slug' | 'title'>): CourseListItem {
+  return {
+    thumbnailUrl: null,
+    durationMinutes: null,
+    difficulty: null,
+    publishedAt: null,
+    ...c,
+    category: c.category ?? null,
+    shortDescription: c.shortDescription ?? null,
+    instructorName: c.instructorName ?? null,
+    featured: c.featured ?? false,
+    enrollmentCount: c.enrollmentCount ?? 0,
+    lessonCount: c.lessonCount ?? 0,
+    averageRating: c.averageRating ?? null,
+    reviewCount: c.reviewCount ?? 0,
+  };
+}
+
 export function categoryOf(course: CourseListItem): string {
   return course.category ?? 'General';
 }
