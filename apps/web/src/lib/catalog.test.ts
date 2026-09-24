@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CourseListItem } from './api';
-import { EMPTY_FILTERS, facetCounts, filterAndSort, formatDuration } from './catalog';
+import { EMPTY_FILTERS, facetCounts, filterAndSort, formatDuration, normalizeCourse } from './catalog';
 
 const course = (over: Partial<CourseListItem>): CourseListItem => ({
   id: over.slug ?? 'x',
@@ -57,6 +57,14 @@ describe('catalog filtering', () => {
     // ...while other facets are narrowed to the selected category.
     expect(counts.levels.get('intermediate')).toBe(1);
     expect(counts.levels.get('beginner')).toBeUndefined();
+  });
+
+  it('defaults fields an older API omits, so rendering and sorting stay safe', () => {
+    // Shape the pre-0005 API returned: no catalog fields or stats at all.
+    const old = normalizeCourse({ id: '1', slug: 'old', title: 'Old', durationMinutes: 60, difficulty: 'beginner' });
+    expect(old).toMatchObject({ averageRating: null, enrollmentCount: 0, lessonCount: 0, reviewCount: 0, featured: false, category: null });
+    const sorted = filterAndSort([old, courses[0]], EMPTY_FILTERS, 'popular');
+    expect(slugs(sorted)).toEqual(['js', 'old']);
   });
 
   it('formats durations', () => {
